@@ -1,0 +1,64 @@
+schemaVersion: v0.4
+prepare:
+  steps: []
+test:
+  steps: []
+run:
+  harbor-deployer:
+    plan: 201
+    replicas: 1
+    network:
+      ports:
+        - port: 3000
+          isPublic: false
+      paths: []
+    env:
+      HARBOR_ADMIN_PASSWORD: ${{ vault.HARBOR_ADMIN_PASSWORD }}
+      HARBOR_DATABASE_PASSWORD: ${{ vault.HARBOR_DATABASE_PASSWORD }}
+      HARBOR_JOBSERVICE_SECRET: ${{ vault.HARBOR_JOBSERVICE_SECRET }}
+      HARBOR_REGISTRY_PASSWORD: ${{ vault.HARBOR_REGISTRY_PASSWORD }}
+      HARBOR_REGISTRY_SECRET: ${{ vault.HARBOR_REGISTRY_SECRET }}
+      HARBOR_SECRET_KEY: ${{ vault.HARBOR_SECRET_KEY }}
+      TEAM_ID: ${{ team.id }}
+    steps:
+      - name: Create namespace
+        command: kubectl create namespace harbor --dry-run=client -o yaml | kubectl
+          apply -f -
+      - name: Add Harbor Helm repository
+        command: helm repo add harbor https://helm.goharbor.io && helm repo update harbor
+      - name: Deploy Harbor to vCluster
+        command: helm upgrade --install harbor harbor/harbor --namespace harbor
+          --create-namespace --version 1.18.4 -f values.prod.yaml
+          --set-string externalURL=https://$WORKSPACE_DEV_DOMAIN
+          --set-string harborAdminPassword=$HARBOR_ADMIN_PASSWORD
+          --set-string database.external.host=ms-postgres-v1-$TEAM_ID-landscape-$WORKSPACE_ID-postgres.ms-postgres
+          --set-string database.external.password=$HARBOR_DATABASE_PASSWORD
+          --set-string secretKey=$HARBOR_SECRET_KEY
+          --set-string jobservice.secret=$HARBOR_JOBSERVICE_SECRET
+          --set-string registry.secret=$HARBOR_REGISTRY_SECRET
+          --set-string registry.credentials.password=$HARBOR_REGISTRY_PASSWORD
+          --wait --timeout 15m
+
+  postgres:
+    provider:
+      name: postgres
+      schemaVersion: v1
+    plan:
+      id: 0
+      parameters:
+        cpu: 1
+        memory: 500
+    config:
+      version: "17.6"
+      userName: harbor
+      databaseName: harbor
+    secrets:
+      userPassword: ${{ vault.HARBOR_DATABASE_PASSWORD }}
+      superuserPassword: ${{ vault.HARBOR_DATABASE_PASSWORD }}
+
+  harbor-headless:
+    network:
+      paths:
+        - path: /
+          stripPath: false
+          target: http://harbor-x-harbor-x-k8s.rg-${{ team.id }}.svc.cluster.local:80
