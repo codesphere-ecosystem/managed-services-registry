@@ -9,8 +9,8 @@ run:
     replicas: 1
     network:
       ports:
-        - port: 3000
-          isPublic: false
+      - port: 3000
+        isPublic: false
       paths: []
     env:
       HARBOR_ADMIN_PASSWORD: ${{ vault.HARBOR_ADMIN_PASSWORD }}
@@ -19,27 +19,30 @@ run:
       HARBOR_REGISTRY_PASSWORD: ${{ vault.HARBOR_REGISTRY_PASSWORD }}
       HARBOR_REGISTRY_SECRET: ${{ vault.HARBOR_REGISTRY_SECRET }}
       HARBOR_SECRET_KEY: ${{ vault.HARBOR_SECRET_KEY }}
+      HARBOR_S3_ACCESS_KEY: ${{ vault.HARBOR_S3_ACCESS_KEY }}
+      HARBOR_S3_SECRET_KEY: ${{ vault.HARBOR_S3_SECRET_KEY }}
+      HARBOR_S3_ENDPOINT: http://rgw-load-balancer.rook-ceph.svc.cluster.local
       TEAM_ID: ${{ team.id }}
     steps:
-      - name: Create namespace
-        command: kubectl create namespace harbor --dry-run=client -o yaml | kubectl
-          apply -f -
       - name: Add Harbor Helm repository
         command: helm repo add harbor https://helm.goharbor.io && helm repo update harbor
       - name: Deploy Harbor to vCluster
         command: helm upgrade --install harbor harbor/harbor --namespace harbor
-          --create-namespace --version 1.18.4 -f values.prod.yaml
+          --create-namespace --version 1.19.1 -f values.prod.yaml
           --set-string externalURL=https://$WORKSPACE_DEV_DOMAIN
           --set-string harborAdminPassword=$HARBOR_ADMIN_PASSWORD
-          --set-string database.external.host=ms-postgres-v1-$TEAM_ID-landscape-$WORKSPACE_ID-postgres.ms-postgres
+          --set-string database.external.host=ms-postgres-v1-$TEAM_ID-landscape-$WORKSPACE_ID-db.ms-postgres
           --set-string database.external.password=$HARBOR_DATABASE_PASSWORD
+          --set-string persistence.imageChartStorage.s3.regionendpoint=$HARBOR_S3_ENDPOINT
+          --set-string persistence.imageChartStorage.s3.accesskey=$HARBOR_S3_ACCESS_KEY
+          --set-string persistence.imageChartStorage.s3.secretkey=$HARBOR_S3_SECRET_KEY
           --set-string secretKey=$HARBOR_SECRET_KEY
           --set-string jobservice.secret=$HARBOR_JOBSERVICE_SECRET
           --set-string registry.secret=$HARBOR_REGISTRY_SECRET
           --set-string registry.credentials.password=$HARBOR_REGISTRY_PASSWORD
           --wait --timeout 15m
 
-  postgres:
+  db:
     provider:
       name: postgres
       schemaVersion: v1
@@ -55,6 +58,19 @@ run:
     secrets:
       userPassword: ${{ vault.HARBOR_DATABASE_PASSWORD }}
       superuserPassword: ${{ vault.HARBOR_DATABASE_PASSWORD }}
+
+  object-store:
+    provider:
+      name: s3
+      schemaVersion: v1
+    plan:
+      id: 0
+      parameters: {}
+    config:
+      accessKey: ${{ vault.HARBOR_S3_ACCESS_KEY }}
+      initialBucketName: harbor
+    secrets:
+      secretKey: ${{ vault.HARBOR_S3_SECRET_KEY }}
 
   harbor-headless:
     network:

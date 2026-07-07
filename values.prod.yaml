@@ -1,5 +1,5 @@
 expose:
-  type: ClusterIP
+  type: clusterIP
   tls:
     enabled: false
   clusterIP:
@@ -7,12 +7,17 @@ expose:
     ports:
       httpPort: 80
 
+core:
+  configureUserSettings: |
+    {
+      "self_registration": false,
+      "project_creation_restriction": "adminonly"
+    }
+
 persistence:
   enabled: true
   resourcePolicy: keep
   persistentVolumeClaim:
-    registry:
-      size: 10Gi
     jobservice:
       jobLog:
         size: 1Gi
@@ -20,6 +25,13 @@ persistence:
       size: 1Gi
     trivy:
       size: 5Gi
+  imageChartStorage:
+    disableredirect: true
+    type: s3
+    s3:
+      region: us-east-1
+      bucket: harbor
+      v4auth: true
 
 database:
   type: external
