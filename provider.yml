@@ -1,0 +1,84 @@
+name: harbor
+version: v1
+author: Codesphere
+displayName: Harbor
+iconUrl: https://github.com/goharbor/harbor/blob/main/docs/img/harbor_logo.png?raw=true
+category: registry
+description: |
+  Harbor project provisioning backed by the managed-services registry adapter.
+
+  Each service instance creates one Harbor project and one Harbor
+  project-scoped robot account with full project privileges.
+
+  The selected plan's `parameters.storage` value is used as the Harbor
+  project storage quota in MiB.
+backend:
+  api:
+    endpoint: https://394190.7.ws.dev-codesphere.com/api/v1/harbor
+    accessKey: ${{ vault.HARBOR_PROVIDER_API_KEY }}
+plans:
+  - id: 0
+    name: Default
+    description: Harbor project with a configurable storage quota.
+    parameters:
+      storage:
+        pricedAs: storage-mib
+        schema:
+          type: integer
+          default: 10240
+          minimum: 1
+          readOnly: false
+      cpu:
+        pricedAs: cpu-tenths
+        schema:
+          type: number
+          default: 0
+          readOnly: true
+      memory:
+        pricedAs: ram-mib
+        schema:
+          type: integer
+          default: 0
+          readOnly: true
+configSchema:
+  type: object
+  properties:
+    public:
+      type: boolean
+      description: Whether the Harbor project should be publicly visible.
+      default: false
+detailsSchema:
+  type: object
+  properties:
+    ready:
+      type: boolean
+      description: Whether the managed Harbor service is ready.
+    projectName:
+      type: string
+      description: Harbor project name created for the service.
+    username:
+      type: string
+      description: Managed Harbor robot account name for the service.
+    harborUrl:
+      type: string
+      format: uri
+      description: Base URL of the Harbor instance backing this service.
+    registryUrl:
+      type: string
+      format: uri
+      description: Project-specific registry path for tagging artifacts.
+    usedStorage:
+      type: integer
+      description: Currently used Harbor project storage in MiB.
+    usedStoragePercent:
+      type: number
+      description: Currently used Harbor project storage as a percentage of the configured quota.
+secretsSchema:
+  type: object
+  required:
+    - superuserPassword
+  properties:
+    superuserPassword:
+      type: string
+      format: password
+      description: Secret for the Harbor robot account created for this service.

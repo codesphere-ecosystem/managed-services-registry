@@ -1,0 +1,25 @@
+schemaVersion: v0.4
+prepare:
+  steps: []
+test:
+  steps: []
+run:
+  provider:
+    healthEndpoint: http://localhost:8080/health
+    plan: 201
+    replicas: 1
+    network:
+      ports:
+        - port: 8080
+          isPublic: false
+      paths:
+        - port: 8080
+          path: /
+    env:
+      API_KEY: ${{ vault.HARBOR_PROVIDER_API_KEY }}
+      HARBOR_URL: ${{ workspace.env.HARBOR_URL }}
+      HARBOR_USERNAME: ${{ vault.HARBOR_USERNAME }}
+      HARBOR_PASSWORD: ${{ vault.HARBOR_PASSWORD }}
+    steps:
+      - name: ""
+        command: ./dist/managed-services-registry-linux-amd64
