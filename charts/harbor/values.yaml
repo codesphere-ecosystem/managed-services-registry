@@ -1,0 +1,55 @@
+harbor:
+  expose:
+    type: clusterIP
+    tls:
+      enabled: false
+    clusterIP:
+      name: harbor
+      ports:
+        httpPort: 80
+
+  core:
+    configureUserSettings: |
+      {
+        "self_registration": false,
+        "project_creation_restriction": "adminonly"
+      }
+
+  persistence:
+    enabled: true
+    resourcePolicy: keep
+    persistentVolumeClaim:
+      jobservice:
+        jobLog:
+          size: 1Gi
+      redis:
+        size: 1Gi
+      trivy:
+        size: 5Gi
+    imageChartStorage:
+      disableredirect: true
+      type: s3
+      s3:
+        region: us-east-1
+        bucket: harbor
+        v4auth: true
+
+  database:
+    type: external
+    external:
+      port: "5432"
+      username: harbor
+      coreDatabase: harbor
+      sslmode: disable
+
+  redis:
+    type: internal
+
+  trivy:
+    enabled: false
+
+  cache:
+    enabled: true
+    expireHours: 24
+
+  logLevel: info
