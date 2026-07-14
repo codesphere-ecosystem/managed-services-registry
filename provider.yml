@@ -81,4 +81,6 @@ secretsSchema:
     superuserPassword:
       type: string
       format: password
-      description: Secret for the Harbor robot account created for this service.
+      minLength: 8
+      maxLength: 128
+      description: Secret for the Harbor robot account created for this service. The secret must be 8-128, inclusively, characters long with at least 1 uppercase letter, 1 lowercase letter and 1 number.

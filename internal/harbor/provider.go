@@ -8,6 +8,8 @@ import (
 	"math"
 	"net/url"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	msclient "github.com/codesphere-cloud/managed-services-lib/client"
 	"github.com/codesphere-cloud/managed-services-lib/model"
@@ -18,6 +20,7 @@ import (
 // ProviderType is the API path segment and logical provider name.
 const ProviderType = "harbor"
 const managedRobotName = "ms-admin"
+const robotPasswordRequirements = "the secret must be 8-128, inclusively, characters long with at least 1 uppercase letter, 1 lowercase letter and 1 number"
 
 // Provider manages Harbor projects and project-scoped robot accounts.
 type Provider struct {
@@ -168,8 +171,8 @@ func (p *Provider) Update(ctx context.Context, id model.ServiceID, args UpdateAr
 
 	var robotPassword *string
 	if args.Secrets != nil {
-		if strings.TrimSpace(args.Secrets.SuperuserPassword) == "" {
-			return fmt.Errorf("%w: secrets.superuserPassword must not be empty", provider.ErrInvalidArgument)
+		if err := validateRobotPassword(args.Secrets.SuperuserPassword); err != nil {
+			return err
 		}
 		robotPassword = &args.Secrets.SuperuserPassword
 	}
@@ -440,12 +443,38 @@ func (p *Provider) validateCreate(params *Service) error {
 	if params.ID == "" {
 		return fmt.Errorf("%w: id is required", provider.ErrInvalidArgument)
 	}
-	if strings.TrimSpace(params.Secrets.SuperuserPassword) == "" {
-		return fmt.Errorf("%w: secrets.superuserPassword is required", provider.ErrInvalidArgument)
+	if err := validateRobotPassword(params.Secrets.SuperuserPassword); err != nil {
+		return err
 	}
 	if params.Plan.Parameters.StorageMiB < 0 {
 		return fmt.Errorf("%w: plan.parameters.storage must not be negative", provider.ErrInvalidArgument)
 	}
+	return nil
+}
+
+func validateRobotPassword(password string) error {
+	if utf8.RuneCountInString(password) < 8 || utf8.RuneCountInString(password) > 128 {
+		return fmt.Errorf("%w: secrets.superuserPassword %s", provider.ErrInvalidArgument, robotPasswordRequirements)
+	}
+
+	var hasUpper bool
+	var hasLower bool
+	var hasNumber bool
+	for _, r := range password {
+		switch {
+		case unicode.IsUpper(r):
+			hasUpper = true
+		case unicode.IsLower(r):
+			hasLower = true
+		case unicode.IsNumber(r):
+			hasNumber = true
+		}
+	}
+
+	if !hasUpper || !hasLower || !hasNumber {
+		return fmt.Errorf("%w: secrets.superuserPassword %s", provider.ErrInvalidArgument, robotPasswordRequirements)
+	}
+
 	return nil
 }
 

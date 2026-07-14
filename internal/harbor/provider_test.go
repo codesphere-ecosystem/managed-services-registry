@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/codesphere-cloud/managed-services-lib/model"
 	"github.com/go-resty/resty/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -92,6 +93,42 @@ var _ = Describe("Provider.Delete", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(deleteProjectCalled).To(BeTrue())
+	})
+})
+
+var _ = Describe("Provider password validation", func() {
+	It("rejects create requests with invalid robot passwords", func() {
+		provider := NewProvider(Config{}, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+		err := provider.validateCreate(&Service{
+			ID: "demo",
+			Plan: model.Plan{
+				Parameters: model.PlanParameters{
+					StorageMiB: 1024,
+				},
+			},
+			Secrets: model.ServiceSecrets{
+				SuperuserPassword: "password1",
+			},
+		})
+
+		Expect(err).To(MatchError(ContainSubstring(robotPasswordRequirements)))
+	})
+
+	It("rejects update requests with invalid robot passwords", func() {
+		provider := NewProvider(Config{}, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+		err := provider.Update(context.Background(), "demo", UpdateArgs{
+			Secrets: &model.ServiceSecrets{
+				SuperuserPassword: "Password",
+			},
+		})
+
+		Expect(err).To(MatchError(ContainSubstring(robotPasswordRequirements)))
+	})
+
+	It("accepts robot passwords that satisfy the documented policy", func() {
+		Expect(validateRobotPassword("ValidPass1")).To(Succeed())
 	})
 })
 
