@@ -186,16 +186,31 @@ func (p *Provider) Update(ctx context.Context, id model.ServiceID, args UpdateAr
 
 // Delete removes the Harbor project and managed Harbor robot account.
 func (p *Provider) Delete(ctx context.Context, id model.ServiceID) error {
+	if id == "" {
+		return fmt.Errorf("%w: missing service id", provider.ErrInvalidArgument)
+	}
+
 	p.logger.Info("delete harbor service invoked", "id", id)
 
-	project, robot, err := p.lookupState(ctx, id)
+	project, err := p.findProjectByServiceID(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	projectName := project.Name
-	if err := p.client.DeleteProjectRobot(ctx, robot.ID); err != nil && !errors.Is(err, errHarborNotFound) {
-		return p.mapUpstreamError("delete robot account", err)
+
+	if err := p.deleteProjectRepositories(ctx, projectName); err != nil {
+		return err
+	}
+
+	robot, err := p.findManagedProjectRobot(ctx, id, int64(project.ProjectID), projectName)
+	if err != nil {
+		return err
+	}
+	if robot != nil {
+		if err := p.client.DeleteProjectRobot(ctx, robot.ID); err != nil && !errors.Is(err, errHarborNotFound) {
+			return p.mapUpstreamError("delete robot account", err)
+		}
 	}
 
 	if err := p.client.DeleteProject(ctx, projectName); err != nil {
@@ -203,6 +218,26 @@ func (p *Provider) Delete(ctx context.Context, id model.ServiceID) error {
 			return fmt.Errorf("%w: %s", provider.ErrServiceNotFound, id)
 		}
 		return p.mapUpstreamError("delete project", err)
+	}
+
+	return nil
+}
+
+func (p *Provider) deleteProjectRepositories(ctx context.Context, projectName string) error {
+	repositories, err := p.client.ListProjectRepositories(ctx, projectName)
+	if err != nil {
+		return p.mapUpstreamError("list project repositories", err)
+	}
+
+	for _, repository := range repositories {
+		if repository == nil || strings.TrimSpace(repository.Name) == "" {
+			continue
+		}
+
+		p.logger.Info("deleting harbor repository before project cleanup", "project", projectName, "repository", repository.Name)
+		if err := p.client.DeleteProjectRepository(ctx, projectName, repository.Name); err != nil && !errors.Is(err, errHarborNotFound) {
+			return p.mapUpstreamError("delete repository", err)
+		}
 	}
 
 	return nil
@@ -436,6 +471,18 @@ func (p *Provider) findProjectRobot(ctx context.Context, projectID int64, projec
 	}
 
 	return p.client.GetProjectRobot(ctx, matched.ID)
+}
+
+func (p *Provider) findManagedProjectRobot(ctx context.Context, id model.ServiceID, projectID int64, projectName string) (*harbormodels.Robot, error) {
+	robot, err := p.findProjectRobot(ctx, projectID, projectName, p.robotName(id))
+	if err == nil {
+		return robot, nil
+	}
+	if errors.Is(err, errHarborNotFound) {
+		return nil, nil
+	}
+
+	return nil, p.mapUpstreamError("find project robot", err)
 }
 
 func storageMiBToHarborQuota(storageMiB int) int64 {

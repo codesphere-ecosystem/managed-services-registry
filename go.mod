@@ -3,12 +3,23 @@ module github.com/codesphere-cloud/managed-services-registry
 go 1.26.5
 
 require (
+	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/codesphere-cloud/managed-services-lib v0.2.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/goharbor/go-client v0.213.1
+	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/onsi/ginkgo/v2 v2.32.0
+	github.com/onsi/gomega v1.40.0
 )
 
-require github.com/go-openapi/runtime v0.21.0 // indirect
+require (
+	github.com/go-openapi/runtime v0.21.0 // indirect
+	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
+	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
+	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
+)
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect

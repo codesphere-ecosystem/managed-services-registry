@@ -171,6 +171,38 @@ func (c *apiClient) DeleteProject(ctx context.Context, name string) error {
 	return err
 }
 
+func (c *apiClient) ListProjectRepositories(ctx context.Context, projectName string) ([]*harbormodels.Repository, error) {
+	const pageSize = 100
+
+	var repositories []*harbormodels.Repository
+	for page := 1; ; page++ {
+		var batch []*harbormodels.Repository
+		resp, err := c.do(ctx, http.MethodGet, "/projects/"+url.PathEscape(projectName)+"/repositories", requestOptions{
+			headers: resourceNameHeaders(),
+			query: map[string]string{
+				"page":      strconv.Itoa(page),
+				"page_size": strconv.Itoa(pageSize),
+			},
+			result: &batch,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		repositories = append(repositories, batch...)
+		if donePaging(resp, len(batch), len(repositories), pageSize) {
+			return repositories, nil
+		}
+	}
+}
+
+func (c *apiClient) DeleteProjectRepository(ctx context.Context, projectName, repositoryName string) error {
+	_, err := c.do(ctx, http.MethodDelete, "/projects/"+url.PathEscape(projectName)+"/repositories/"+url.PathEscape(repositoryPathName(projectName, repositoryName)), requestOptions{
+		headers: resourceNameHeaders(),
+	})
+	return err
+}
+
 func (c *apiClient) CreateProjectRobot(ctx context.Context, projectName string, req *harbormodels.RobotCreate) (*harbormodels.RobotCreated, error) {
 	var robot harbormodels.RobotCreated
 	_, err := c.do(ctx, http.MethodPost, "/robots", requestOptions{
@@ -396,6 +428,15 @@ func resourceNameHeaders() map[string]string {
 	return map[string]string{
 		"X-Is-Resource-Name": "true",
 	}
+}
+
+func repositoryPathName(projectName, repositoryName string) string {
+	prefix := strings.TrimSpace(projectName) + "/"
+	if strings.HasPrefix(repositoryName, prefix) {
+		return strings.TrimPrefix(repositoryName, prefix)
+	}
+
+	return repositoryName
 }
 
 func parseProjectVisibility(project *harbormodels.Project) bool {
