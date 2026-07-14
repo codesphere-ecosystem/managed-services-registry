@@ -24,22 +24,22 @@ run:
       HARBOR_S3_ENDPOINT: http://rgw-load-balancer.rook-ceph.svc.cluster.local
       TEAM_ID: ${{ team.id }}
     steps:
-      - name: Add Harbor Helm repository
-        command: helm repo add harbor https://helm.goharbor.io && helm repo update harbor
+      - name: Build bundled Harbor chart dependencies
+        command: helm dependency build ./charts/harbor
       - name: Deploy Harbor to vCluster
-        command: helm upgrade --install harbor harbor/harbor --namespace harbor
-          --create-namespace --version 1.19.1 -f values.prod.yaml
-          --set-string externalURL=https://$WORKSPACE_DEV_DOMAIN
-          --set-string harborAdminPassword=$HARBOR_ADMIN_PASSWORD
-          --set-string database.external.host=ms-postgres-v1-$TEAM_ID-landscape-$WORKSPACE_ID-db.ms-postgres
-          --set-string database.external.password=$HARBOR_DATABASE_PASSWORD
-          --set-string persistence.imageChartStorage.s3.regionendpoint=$HARBOR_S3_ENDPOINT
-          --set-string persistence.imageChartStorage.s3.accesskey=$HARBOR_S3_ACCESS_KEY
-          --set-string persistence.imageChartStorage.s3.secretkey=$HARBOR_S3_SECRET_KEY
-          --set-string secretKey=$HARBOR_SECRET_KEY
-          --set-string jobservice.secret=$HARBOR_JOBSERVICE_SECRET
-          --set-string registry.secret=$HARBOR_REGISTRY_SECRET
-          --set-string registry.credentials.password=$HARBOR_REGISTRY_PASSWORD
+        command: helm upgrade --install harbor ./charts/harbor --namespace harbor
+          --create-namespace
+          --set-string harbor.externalURL=https://$WORKSPACE_DEV_DOMAIN
+          --set-string harbor.harborAdminPassword=$HARBOR_ADMIN_PASSWORD
+          --set-string harbor.database.external.host=ms-postgres-v1-$TEAM_ID-landscape-$WORKSPACE_ID-db.ms-postgres
+          --set-string harbor.database.external.password=$HARBOR_DATABASE_PASSWORD
+          --set-string harbor.persistence.imageChartStorage.s3.regionendpoint=$HARBOR_S3_ENDPOINT
+          --set-string harbor.persistence.imageChartStorage.s3.accesskey=$HARBOR_S3_ACCESS_KEY
+          --set-string harbor.persistence.imageChartStorage.s3.secretkey=$HARBOR_S3_SECRET_KEY
+          --set-string harbor.secretKey=$HARBOR_SECRET_KEY
+          --set-string harbor.jobservice.secret=$HARBOR_JOBSERVICE_SECRET
+          --set-string harbor.registry.secret=$HARBOR_REGISTRY_SECRET
+          --set-string harbor.registry.credentials.password=$HARBOR_REGISTRY_PASSWORD
           --wait --timeout 15m
 
   db:

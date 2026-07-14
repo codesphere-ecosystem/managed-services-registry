@@ -135,9 +135,19 @@ After deployment, Harbor is reachable through the workspace domain configured by
 
 - `externalURL=https://$WORKSPACE_DEV_DOMAIN`
 
-### 2. Deploy the provider service
+### 2. Build and publish the provider image
 
-Build the provider binary and deploy the Codesphere workload defined in [`ci.provider.yml`](./ci.provider.yml).
+Build the provider container image from [`Dockerfile`](./Dockerfile) and publish it to GitHub Container Registry with the workflow in [`.github/workflows/provider-image.yml`](./.github/workflows/provider-image.yml).
+
+The workflow publishes to:
+
+- `ghcr.io/<owner>/<repo>`
+- `:latest` from the default branch
+- branch, tag, and commit-SHA tags from GitHub Actions metadata
+
+### 3. Deploy the provider service
+
+Deploy the Codesphere workload defined in [`ci.provider.yml`](./ci.provider.yml).
 
 The provider expects:
 
@@ -146,17 +156,17 @@ The provider expects:
 - `HARBOR_USERNAME` from vault key `HARBOR_USERNAME`
 - `HARBOR_PASSWORD` from vault key `HARBOR_PASSWORD`
 
-The provider workload starts the binary:
+The provider workload uses the published OCI image:
 
-```sh
-./dist/managed-services-registry-linux-amd64
+```text
+ghcr.io/codesphere-cloud/managed-services-registry:latest
 ```
 
 The service exposes the managed service API on:
 
 - `/api/v1/harbor`
 
-### 3. Register the provider in Codesphere
+### 4. Register the provider in Codesphere
 
 Use [`provider.yml`](./provider.yml) to register the Harbor managed service in Codesphere.
 

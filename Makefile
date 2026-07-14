@@ -20,6 +20,9 @@ export GOMODCACHE := $(abspath $(GO_MOD_CACHE))
 
 all: fmt lint test build
 
+run:
+	$(GO) run ./cmd/server
+
 build:
 	mkdir -p $(BUILD_DIR) $(GO_BUILD_CACHE) $(GO_MOD_CACHE)
 	$(GO) build $(GOFLAGS) -o $(BIN) ./cmd/server
