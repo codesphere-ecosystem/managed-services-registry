@@ -1,3 +1,6 @@
+// Copyright (c) Codesphere SE
+// SPDX-License-Identifier: Apache-2.0
+
 package harbor
 
 import "github.com/codesphere-cloud/managed-services-lib/model"

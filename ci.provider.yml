@@ -1,3 +1,6 @@
+# Copyright (c) Codesphere SE
+# SPDX-License-Identifier: Apache-2.0
+
 schemaVersion: v0.4
 prepare:
   steps: []

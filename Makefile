@@ -40,5 +40,9 @@ fmt:
 	mkdir -p $(GO_BUILD_CACHE) $(GO_MOD_CACHE)
 	$(GO) fmt $(PKGS)
 
+generate-license:
+	go tool go-licenses report --template .NOTICE.template ./... > NOTICE
+	copywrite headers apply
+
 clean:
 	rm -rf $(BUILD_DIR) $(CACHE_DIR)

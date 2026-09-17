@@ -1,3 +1,6 @@
+# Copyright (c) Codesphere SE
+# SPDX-License-Identifier: Apache-2.0
+
 apiVersion: v2
 name: harbor
 description: Wrapper chart that bundles the upstream Harbor Helm chart

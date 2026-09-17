@@ -8,7 +8,20 @@ require (
 	github.com/goharbor/go-client v0.213.1
 )
 
-require github.com/go-openapi/runtime v0.21.0 // indirect
+require (
+	github.com/go-openapi/runtime v0.21.0 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/google/go-licenses/v2 v2.0.1 // indirect
+	github.com/google/licenseclassifier/v2 v2.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/otiai10/copy v1.14.0 // indirect
+	github.com/sergi/go-diff v1.2.0 // indirect
+	github.com/spf13/cobra v1.10.2 // indirect
+	go.opencensus.io v0.24.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
+)
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
@@ -85,3 +98,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
+
+tool github.com/google/go-licenses/v2
