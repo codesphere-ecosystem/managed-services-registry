@@ -3,7 +3,7 @@ module github.com/codesphere-cloud/managed-services-registry
 go 1.27.1
 
 require (
-	github.com/codesphere-cloud/managed-services-lib v0.2.0
+	github.com/codesphere-cloud/managed-services-lib v0.8.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/goharbor/go-client v0.213.1

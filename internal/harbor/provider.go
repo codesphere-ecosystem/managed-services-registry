@@ -24,8 +24,6 @@ const managedRobotName = "ms-admin"
 
 // Provider manages Harbor projects and project-scoped robot accounts.
 type Provider struct {
-	provider.UnimplementedBackups
-
 	cfg    Config
 	client *apiClient
 	logger *slog.Logger
@@ -41,7 +39,7 @@ func NewProvider(cfg Config, client *apiClient, logger *slog.Logger) *Provider {
 }
 
 // Create creates a Harbor project and a project-scoped robot account.
-func (p *Provider) Create(ctx context.Context, params Service) error {
+func (p *Provider) Create(ctx context.Context, params provider.CreateRequest[PlanParameters, ServiceConfig, ServiceSecrets]) error {
 	if err := p.validateCreate(&params); err != nil {
 		return err
 	}
@@ -52,13 +50,13 @@ func (p *Provider) Create(ctx context.Context, params Service) error {
 		"id", params.ID,
 		"project", projectName,
 		"public", params.Config.Public,
-		"storageMiB", params.Plan.Parameters.StorageMiB,
+		"storageMiB", params.Plan.StorageMiB,
 	)
 
 	projectCreated, err := p.reconcileService(ctx, reconcileServiceArgs{
 		id:              params.ID,
 		public:          &params.Config.Public,
-		storageMiB:      intPtr(params.Plan.Parameters.StorageMiB),
+		storageMiB:      intPtr(params.Plan.StorageMiB),
 		robotPassword:   stringPtr(params.Secrets.SuperuserPassword),
 		allowCreate:     true,
 		createErrorPath: true,
@@ -112,14 +110,16 @@ func (p *Provider) GetStatus(ctx context.Context, ids []model.ServiceID) (map[mo
 			return nil, p.mapUpstreamError("get project summary", err)
 		}
 
-		status := Status{
-			Config: ServiceConfig{
+		paused := false
+		status := provider.NewServiceStatus(
+			PlanParameters{
+				StorageMiB: projectSummaryStorageMiB(summary),
+			},
+			ServiceConfig{
 				Public: parseProjectVisibility(project),
 			},
-			Details: Details{
-				ServiceDetails: model.ServiceDetails{
-					Ready: true,
-				},
+			Details{
+				Ready:              true,
 				ProjectName:        project.Name,
 				Username:           robot.Name,
 				HarborURL:          p.cfg.BaseURL,
@@ -127,13 +127,9 @@ func (p *Provider) GetStatus(ctx context.Context, ids []model.ServiceID) (map[mo
 				UsedStorage:        projectSummaryUsedStorageMiB(summary),
 				UsedStoragePercent: projectSummaryUsedStoragePercent(summary),
 			},
-			Plan: model.Plan{
-				Parameters: model.PlanParameters{
-					StorageMiB: projectSummaryStorageMiB(summary),
-				},
-			},
-			Pause: false,
-		}
+			&paused,
+			nil,
+		)
 
 		result[id] = status
 	}
@@ -142,7 +138,9 @@ func (p *Provider) GetStatus(ctx context.Context, ids []model.ServiceID) (map[mo
 }
 
 // Update updates Harbor project visibility, storage quota, and the managed robot secret.
-func (p *Provider) Update(ctx context.Context, id model.ServiceID, args UpdateArgs) error {
+func (p *Provider) Update(ctx context.Context, req provider.UpdateRequest[UpdateArgs]) error {
+	id := req.ID
+	args := req.Params
 	if id == "" {
 		return fmt.Errorf("%w: missing service id", provider.ErrInvalidArgument)
 	}
@@ -401,7 +399,7 @@ func (p *Provider) robotName(id model.ServiceID) string {
 	return "robot$" + p.projectName(id) + "+" + managedRobotName
 }
 
-func (p *Provider) validateCreate(params *Service) error {
+func (p *Provider) validateCreate(params *provider.CreateRequest[PlanParameters, ServiceConfig, ServiceSecrets]) error {
 	if params == nil {
 		return fmt.Errorf("%w: request body is required", provider.ErrInvalidArgument)
 	}
@@ -411,7 +409,7 @@ func (p *Provider) validateCreate(params *Service) error {
 	if strings.TrimSpace(params.Secrets.SuperuserPassword) == "" {
 		return fmt.Errorf("%w: secrets.superuserPassword is required", provider.ErrInvalidArgument)
 	}
-	if params.Plan.Parameters.StorageMiB < 0 {
+	if params.Plan.StorageMiB < 0 {
 		return fmt.Errorf("%w: plan.parameters.storage must not be negative", provider.ErrInvalidArgument)
 	}
 	return nil
