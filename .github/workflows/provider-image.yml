@@ -13,6 +13,7 @@ on:
       - go.sum
       - cmd/**
       - internal/**
+      - .github/workflows/check.yml
       - .github/workflows/provider-image.yml
   pull_request:
     paths:
@@ -22,6 +23,7 @@ on:
       - go.sum
       - cmd/**
       - internal/**
+      - .github/workflows/check.yml
       - .github/workflows/provider-image.yml
   workflow_dispatch:
 
@@ -30,7 +32,11 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  check:
+    uses: ./.github/workflows/check.yml
+
   build-and-push:
+    needs: check
     runs-on: ubuntu-latest
     permissions:
       contents: read

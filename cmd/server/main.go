@@ -19,7 +19,7 @@ import (
 	msconfig "github.com/codesphere-cloud/managed-services-lib/config"
 	"github.com/codesphere-cloud/managed-services-lib/provider"
 
-	"github.com/codesphere-cloud/managed-services-registry/internal/harbor"
+	"github.com/codesphere-ecosystem/managed-services-registry/internal/harbor"
 )
 
 func main() {

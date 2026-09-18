@@ -1,4 +1,4 @@
-module github.com/codesphere-cloud/managed-services-registry
+module github.com/codesphere-ecosystem/managed-services-registry
 
 go 1.27.1
 
