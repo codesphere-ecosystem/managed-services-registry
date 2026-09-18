@@ -158,9 +158,11 @@ The provider expects:
 
 The provider workload uses the published OCI image:
 
+<!-- x-release-please-start-version -->
 ```text
-ghcr.io/codesphere-cloud/managed-services-registry:latest
+ghcr.io/codesphere-ecosystem/managed-services-registry:v0.0.0
 ```
+<!-- x-release-please-end -->
 
 The service exposes the managed service API on:
 

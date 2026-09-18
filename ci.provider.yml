@@ -11,7 +11,7 @@ run:
     healthEndpoint: http://localhost:8080/health
     plan: 201
     replicas: 1
-    image: ghcr.io/codesphere-cloud/managed-services-registry:latest
+    image: ghcr.io/codesphere-ecosystem/managed-services-registry:v0.0.0 # x-release-please-version
     network:
       ports:
         - port: 8080
