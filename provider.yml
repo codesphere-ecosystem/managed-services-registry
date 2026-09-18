@@ -17,7 +17,7 @@ description: |
   project storage quota in MiB.
 backend:
   api:
-    endpoint: https://394190.7.ws.dev-codesphere.com/api/v1/harbor
+    endpoint: https://<my-provider-url>/api/v1/harbor
     secret: ${{ vault.HARBOR_PROVIDER_API_KEY }}
 plans:
   - id: 0
