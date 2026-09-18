@@ -29,6 +29,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/provider-image.yml
+    uses: ./.github/workflows/check-and-build.yml
     with:
       tag: ${{ needs.release-please.outputs.tag_name }}

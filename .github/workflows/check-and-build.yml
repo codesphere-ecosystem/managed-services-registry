@@ -1,4 +1,4 @@
-name: Build provider image
+name: Check & Build
 
 on:
   workflow_call:
@@ -7,39 +7,47 @@ on:
         description: Additional image tag to publish
         required: false
         type: string
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-    paths:
-      - Dockerfile
-      - .dockerignore
-      - go.mod
-      - go.sum
-      - cmd/**
-      - internal/**
-      - .github/workflows/check.yml
-      - .github/workflows/provider-image.yml
   pull_request:
-    paths:
-      - Dockerfile
-      - .dockerignore
-      - go.mod
-      - go.sum
-      - cmd/**
-      - internal/**
-      - .github/workflows/check.yml
-      - .github/workflows/provider-image.yml
-  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
-    uses: ./.github/workflows/check.yml
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Check formatting
+        run: make check-fmt
+
+      - name: Lint
+        run: make lint
+
+      - name: Test
+        run: make test
+
+      - name: Build
+        run: make build
+
+      - name: Check license notice
+        run: make check-license
 
   build-and-push:
     needs: check

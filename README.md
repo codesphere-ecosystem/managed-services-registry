@@ -137,7 +137,7 @@ After deployment, Harbor is reachable through the workspace domain configured by
 
 ### 2. Build and publish the provider image
 
-Build the provider container image from [`Dockerfile`](./Dockerfile) and publish it to GitHub Container Registry with the workflow in [`.github/workflows/provider-image.yml`](./.github/workflows/provider-image.yml).
+Build the provider container image from [`Dockerfile`](./Dockerfile) and publish it to GitHub Container Registry with the workflow in [`.github/workflows/check-and-build.yml`](./.github/workflows/check-and-build.yml).
 
 The workflow publishes to:
 
