@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/codesphere-ecosystem/managed-services-registry/compare/v1.0.0...v1.0.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **config:** replace hardcoded provider endpoint ([7ed9e4c](https://github.com/codesphere-ecosystem/managed-services-registry/commit/7ed9e4c8dee0dafe4534fe0ee85f92691fd1009b))
+
 ## 1.0.0 (2026-09-18)
 
 
