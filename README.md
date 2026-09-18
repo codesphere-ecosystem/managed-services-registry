@@ -160,7 +160,7 @@ The provider workload uses the published OCI image:
 
 <!-- x-release-please-start-version -->
 ```text
-ghcr.io/codesphere-ecosystem/managed-services-registry:v1.0.0
+ghcr.io/codesphere-ecosystem/managed-services-registry:v1.0.1
 ```
 <!-- x-release-please-end -->
 
