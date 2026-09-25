@@ -44,7 +44,6 @@ configSchema:
       type: boolean
       description: Whether the Harbor project should be publicly visible.
       default: false
-  additionalProperties: false
 detailsSchema:
   type: object
   properties:
