@@ -49,20 +49,27 @@ detailsSchema:
   properties:
     ready:
       type: boolean
+      description: Whether the managed Harbor service is ready.
     projectName:
       type: string
+      description: Harbor project name created for the service.
     username:
       type: string
+      description: Managed Harbor robot account name for the service.
     harborUrl:
       type: string
       format: uri
+      description: Base URL of the Harbor instance backing this service.
     registryUrl:
       type: string
       format: uri
+      description: Project-specific registry path for tagging artifacts.
     usedStorage:
       type: integer
+      description: Currently used Harbor project storage in MiB.
     usedStoragePercent:
       type: number
+      description: Currently used Harbor project storage as a percentage of the configured quota.
 secretsSchema:
   type: object
   required:
