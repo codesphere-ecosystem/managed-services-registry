@@ -189,14 +189,20 @@ func (p *Provider) Update(ctx context.Context, req provider.UpdateRequest[Update
 func (p *Provider) Delete(ctx context.Context, id model.ServiceID) error {
 	p.logger.Info("delete harbor service invoked", "id", id)
 
-	project, robot, err := p.lookupState(ctx, id)
+	project, err := p.findProjectByServiceID(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	projectName := project.Name
-	if err := p.client.DeleteProjectRobot(ctx, robot.ID); err != nil && !errors.Is(err, errHarborNotFound) {
-		return p.mapUpstreamError("delete robot account", err)
+	robot, err := p.findProjectRobot(ctx, int64(project.ProjectID), projectName, p.robotName(id))
+	switch {
+	case err == nil:
+		if err := p.client.DeleteProjectRobot(ctx, robot.ID); err != nil && !errors.Is(err, errHarborNotFound) {
+			return p.mapUpstreamError("delete robot account", err)
+		}
+	case !errors.Is(err, errHarborNotFound):
+		return p.mapUpstreamError("find project robot", err)
 	}
 
 	if err := p.client.DeleteProject(ctx, projectName); err != nil {
