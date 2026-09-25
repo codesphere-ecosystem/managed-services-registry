@@ -25,6 +25,8 @@ var (
 	errHarborRequestFailed = errors.New("harbor request failed")
 )
 
+const apiBasePath = "/api/v2.0"
+
 type apiClient struct {
 	client  *resty.Client
 	timeout timeouts
@@ -52,6 +54,7 @@ func NewClient(cfg Config) (*apiClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse harbor url: %w", err)
 	}
+	baseURL = baseURL.JoinPath(apiBasePath)
 
 	client := resty.New().
 		SetBaseURL(baseURL.String()).

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: harbor
-version: v1
+schemaVersion: v1
 author: Codesphere
 displayName: Harbor
 iconUrl: https://github.com/goharbor/harbor/blob/main/docs/img/harbor_logo.png?raw=true
@@ -15,34 +15,16 @@ description: |
 
   The selected plan's `parameters.storage` value is used as the Harbor
   project storage quota in MiB.
+documentationUrl: https://docs.codesphere.com/managed-services/providers/harbor
 backend:
   api:
-    endpoint: https://<my-provider-url>/api/v1/harbor
-    secret: ${{ vault.HARBOR_PROVIDER_API_KEY }}
-plans:
-  - id: 0
-    name: Default
-    description: Harbor project with a configurable storage quota.
-    parameters:
-      storage:
-        pricedAs: storage-mib
-        schema:
-          type: integer
-          default: 10240
-          minimum: 1
-          readOnly: false
-      cpu:
-        pricedAs: cpu-tenths
-        schema:
-          type: number
-          default: 0
-          readOnly: true
-      memory:
-        pricedAs: ram-mib
-        schema:
-          type: integer
-          default: 0
-          readOnly: true
+    endpoint: https://2403471-3000.1.csa.codesphere-demo.com/api/v1/harbor
+    secret: Bearer demo
+capabilities:
+  pause: false
+  backups: false
+  pointInTimeRecovery: false
+  highAvailability: false
 configSchema:
   type: object
   properties:
@@ -50,38 +32,50 @@ configSchema:
       type: boolean
       description: Whether the Harbor project should be publicly visible.
       default: false
-detailsSchema:
-  type: object
-  properties:
-    ready:
-      type: boolean
-      description: Whether the managed Harbor service is ready.
-    projectName:
-      type: string
-      description: Harbor project name created for the service.
-    username:
-      type: string
-      description: Managed Harbor robot account name for the service.
-    harborUrl:
-      type: string
-      format: uri
-      description: Base URL of the Harbor instance backing this service.
-    registryUrl:
-      type: string
-      format: uri
-      description: Project-specific registry path for tagging artifacts.
-    usedStorage:
-      type: integer
-      description: Currently used Harbor project storage in MiB.
-    usedStoragePercent:
-      type: number
-      description: Currently used Harbor project storage as a percentage of the configured quota.
+  additionalProperties: false
 secretsSchema:
   type: object
-  required:
-    - superuserPassword
   properties:
     superuserPassword:
       type: string
       format: password
       description: Secret for the Harbor robot account created for this service.
+  required: ['superuserPassword']
+detailsSchema:
+  type: object
+  properties:
+    ready:
+      type: boolean
+    projectName:
+      type: string
+    username:
+      type: string
+    harborUrl:
+      type: string
+      format: uri
+    registryUrl:
+      type: string
+      format: uri
+    usedStorage:
+      type: integer
+    usedStoragePercent:
+      type: number
+  required: ['ready']
+resourceParameters:
+  storage:
+    pricedAs: storage-mib
+    schema:
+      type: integer
+      minimum: 1
+      x-update-constraint: increase-only
+  cpu:
+    pricedAs: cpu-tenths
+    schema: { type: number, readOnly: true }
+  memory:
+    pricedAs: ram-mib
+    schema: { type: integer, readOnly: true }
+plans:
+  - id: 0
+    name: Default
+    description: Harbor project with a configurable storage quota.
+    parameters: { storage: 10240, cpu: 0, memory: 0 }
