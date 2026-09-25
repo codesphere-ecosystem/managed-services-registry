@@ -19,6 +19,24 @@ backend:
   api:
     endpoint: https://2403471-3000.1.csa.codesphere-demo.com/api/v1/harbor
     # secret: Bearer your-api-key
+resourceParameters:
+  storage:
+    pricedAs: storage-mib
+    schema:
+      type: integer
+      minimum: 1
+      x-update-constraint: increase-only
+  cpu:
+    pricedAs: cpu-tenths
+    schema: { type: number, readOnly: true }
+  memory:
+    pricedAs: ram-mib
+    schema: { type: integer, readOnly: true }
+plans:
+  - id: 0
+    name: Default
+    description: Harbor project with a configurable storage quota.
+    parameters: { storage: 10240, cpu: 0, memory: 0 }
 configSchema:
   type: object
   properties:
@@ -27,14 +45,6 @@ configSchema:
       description: Whether the Harbor project should be publicly visible.
       default: false
   additionalProperties: false
-secretsSchema:
-  type: object
-  properties:
-    superuserPassword:
-      type: string
-      format: password
-      description: Secret for the Harbor robot account created for this service.
-  required: ['superuserPassword']
 detailsSchema:
   type: object
   properties:
@@ -55,21 +65,12 @@ detailsSchema:
     usedStoragePercent:
       type: number
   required: ['ready']
-resourceParameters:
-  storage:
-    pricedAs: storage-mib
-    schema:
-      type: integer
-      minimum: 1
-      x-update-constraint: increase-only
-  cpu:
-    pricedAs: cpu-tenths
-    schema: { type: number, readOnly: true }
-  memory:
-    pricedAs: ram-mib
-    schema: { type: integer, readOnly: true }
-plans:
-  - id: 0
-    name: Default
-    description: Harbor project with a configurable storage quota.
-    parameters: { storage: 10240, cpu: 0, memory: 0 }
+secretsSchema:
+  type: object
+  required:
+    - superuserPassword
+  properties:
+    superuserPassword:
+      type: string
+      format: password
+      description: Secret for the Harbor robot account created for this service.
