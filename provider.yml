@@ -64,7 +64,6 @@ detailsSchema:
       type: integer
     usedStoragePercent:
       type: number
-  required: ['ready']
 secretsSchema:
   type: object
   required:
