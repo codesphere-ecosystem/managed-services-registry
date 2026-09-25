@@ -18,7 +18,7 @@ description: |
 backend:
   api:
     endpoint: https://2403471-3000.1.csa.codesphere-demo.com/api/v1/harbor
-    secret: Bearer demo
+    # secret: Bearer your-api-key
 capabilities:
   pause: false
   backups: false
