@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: harbor
-version: v1
+schemaVersion: v1
 author: Codesphere
 displayName: Harbor
 iconUrl: https://github.com/goharbor/harbor/blob/main/docs/img/harbor_logo.png?raw=true
@@ -18,31 +18,32 @@ description: |
 backend:
   api:
     endpoint: https://<my-provider-url>/api/v1/harbor
-    secret: ${{ vault.HARBOR_PROVIDER_API_KEY }}
+    # secret: Bearer your-api-key
+resourceParameters:
+  storage:
+    pricedAs: storage-mib
+    schema:
+      type: integer
+      minimum: 1
+      x-update-constraint: increase-only
+  cpu:
+    pricedAs: cpu-tenths
+    schema:
+      type: number
+      readOnly: true
+  memory:
+    pricedAs: ram-mib
+    schema:
+      type: integer
+      readOnly: true
 plans:
   - id: 0
     name: Default
     description: Harbor project with a configurable storage quota.
     parameters:
-      storage:
-        pricedAs: storage-mib
-        schema:
-          type: integer
-          default: 10240
-          minimum: 1
-          readOnly: false
-      cpu:
-        pricedAs: cpu-tenths
-        schema:
-          type: number
-          default: 0
-          readOnly: true
-      memory:
-        pricedAs: ram-mib
-        schema:
-          type: integer
-          default: 0
-          readOnly: true
+      storage: 10240
+      cpu: 0
+      memory: 0
 configSchema:
   type: object
   properties:

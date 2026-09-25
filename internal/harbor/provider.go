@@ -22,15 +22,31 @@ import (
 const ProviderType = "harbor"
 const managedRobotName = "ms-admin"
 
+// Client is the subset of the Harbor API used by the provider.
+type Client interface {
+	CreateProject(ctx context.Context, name string, public bool, storageLimit int64) error
+	GetProject(ctx context.Context, name string) (*harbormodels.Project, error)
+	ListProjects(ctx context.Context) ([]*harbormodels.Project, error)
+	UpdateProject(ctx context.Context, name string, public bool, storageLimit int64) error
+	GetProjectSummary(ctx context.Context, name string) (*harbormodels.ProjectSummary, error)
+	DeleteProject(ctx context.Context, name string) error
+	CreateProjectRobot(ctx context.Context, projectName string, req *harbormodels.RobotCreate) (*harbormodels.RobotCreated, error)
+	ListProjectRobots(ctx context.Context, projectID int64) ([]*harbormodels.Robot, error)
+	GetProjectRobot(ctx context.Context, robotID int64) (*harbormodels.Robot, error)
+	UpdateProjectRobotPassword(ctx context.Context, robotID int64, password string) error
+	DeleteProjectRobot(ctx context.Context, robotID int64) error
+	UpdateProjectStorageQuota(ctx context.Context, projectID int64, storageLimit int64) error
+}
+
 // Provider manages Harbor projects and project-scoped robot accounts.
 type Provider struct {
 	cfg    Config
-	client *apiClient
+	client Client
 	logger *slog.Logger
 }
 
 // NewProvider creates a Harbor provider.
-func NewProvider(cfg Config, client *apiClient, logger *slog.Logger) *Provider {
+func NewProvider(cfg Config, client Client, logger *slog.Logger) *Provider {
 	return &Provider{
 		cfg:    cfg,
 		client: client,
@@ -85,7 +101,7 @@ func (p *Provider) List(ctx context.Context) ([]model.ServiceID, error) {
 		if project == nil || !strings.HasPrefix(project.Name, p.cfg.ProjectPrefix) {
 			continue
 		}
-		ids = append(ids, model.ServiceID(project.Name))
+		ids = append(ids, model.ServiceID(strings.TrimPrefix(project.Name, p.cfg.ProjectPrefix)))
 	}
 
 	return ids, nil
@@ -189,14 +205,20 @@ func (p *Provider) Update(ctx context.Context, req provider.UpdateRequest[Update
 func (p *Provider) Delete(ctx context.Context, id model.ServiceID) error {
 	p.logger.Info("delete harbor service invoked", "id", id)
 
-	project, robot, err := p.lookupState(ctx, id)
+	project, err := p.findProjectByServiceID(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	projectName := project.Name
-	if err := p.client.DeleteProjectRobot(ctx, robot.ID); err != nil && !errors.Is(err, errHarborNotFound) {
-		return p.mapUpstreamError("delete robot account", err)
+	robot, err := p.findProjectRobot(ctx, int64(project.ProjectID), projectName, p.robotName(id))
+	switch {
+	case err == nil:
+		if err := p.client.DeleteProjectRobot(ctx, robot.ID); err != nil && !errors.Is(err, errHarborNotFound) {
+			return p.mapUpstreamError("delete robot account", err)
+		}
+	case !errors.Is(err, errHarborNotFound):
+		return p.mapUpstreamError("find project robot", err)
 	}
 
 	if err := p.client.DeleteProject(ctx, projectName); err != nil {
