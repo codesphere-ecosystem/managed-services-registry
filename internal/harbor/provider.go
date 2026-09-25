@@ -85,7 +85,7 @@ func (p *Provider) List(ctx context.Context) ([]model.ServiceID, error) {
 		if project == nil || !strings.HasPrefix(project.Name, p.cfg.ProjectPrefix) {
 			continue
 		}
-		ids = append(ids, model.ServiceID(project.Name))
+		ids = append(ids, model.ServiceID(strings.TrimPrefix(project.Name, p.cfg.ProjectPrefix)))
 	}
 
 	return ids, nil
