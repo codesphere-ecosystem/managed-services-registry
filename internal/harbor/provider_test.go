@@ -1,67 +1,84 @@
 // Copyright (c) Codesphere SE
 // SPDX-License-Identifier: Apache-2.0
 
-package harbor
+package harbor_test
 
 import (
 	"context"
-	"io"
 	"log/slog"
-	"slices"
-	"testing"
+
+	harbormodels "github.com/goharbor/go-client/pkg/sdk/v2.0/models"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/codesphere-cloud/managed-services-lib/model"
-	harbormodels "github.com/goharbor/go-client/pkg/sdk/v2.0/models"
+
+	"github.com/codesphere-ecosystem/managed-services-registry/internal/harbor"
 )
 
-// mockClient embeds the interface so unexpected calls panic.
+// mockClient embeds harbor.Client so calls without a mocked method panic.
 type mockClient struct {
-	harborClient
-	projects       []*harbormodels.Project
-	robots         []*harbormodels.Robot
-	deletedProject string
+	harbor.Client
+	mock.Mock
 }
 
-func (m *mockClient) ListProjects(context.Context) ([]*harbormodels.Project, error) {
-	return m.projects, nil
+func (m *mockClient) ListProjects(ctx context.Context) ([]*harbormodels.Project, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]*harbormodels.Project), args.Error(1)
 }
 
-func (m *mockClient) GetProject(_ context.Context, name string) (*harbormodels.Project, error) {
-	return &harbormodels.Project{Name: name, ProjectID: 1}, nil
+func (m *mockClient) GetProject(ctx context.Context, name string) (*harbormodels.Project, error) {
+	args := m.Called(ctx, name)
+	return args.Get(0).(*harbormodels.Project), args.Error(1)
 }
 
-func (m *mockClient) ListProjectRobots(context.Context, int64) ([]*harbormodels.Robot, error) {
-	return m.robots, nil
+func (m *mockClient) ListProjectRobots(ctx context.Context, projectID int64) ([]*harbormodels.Robot, error) {
+	args := m.Called(ctx, projectID)
+	return args.Get(0).([]*harbormodels.Robot), args.Error(1)
 }
 
-func (m *mockClient) DeleteProject(_ context.Context, name string) error {
-	m.deletedProject = name
-	return nil
+func (m *mockClient) DeleteProject(ctx context.Context, name string) error {
+	return m.Called(ctx, name).Error(0)
 }
 
-func newMockProvider(client *mockClient) *Provider {
-	return NewProvider(Config{ProjectPrefix: "ms-"}, client, slog.New(slog.NewTextHandler(io.Discard, nil)))
-}
+var _ = Describe("Provider", func() {
+	var (
+		client   *mockClient
+		provider *harbor.Provider
+		ctx      context.Context
+	)
 
-func TestListReturnsServiceIDs(t *testing.T) {
-	client := &mockClient{projects: []*harbormodels.Project{{Name: "ms-a"}, {Name: "library"}}}
+	BeforeEach(func() {
+		client = new(mockClient)
+		provider = harbor.NewProvider(harbor.Config{ProjectPrefix: "ms-"}, client, slog.Default())
+		ctx = context.Background()
+	})
 
-	ids, err := newMockProvider(client).List(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(ids, []model.ServiceID{"a"}) {
-		t.Fatalf("ids = %v, want [a]", ids)
-	}
-}
+	AfterEach(func() {
+		client.AssertExpectations(GinkgoT())
+	})
 
-func TestDeleteRemovesProjectWithoutRobot(t *testing.T) {
-	client := &mockClient{}
+	Describe("List", func() {
+		It("should return service IDs without the project prefix", func() {
+			client.On("ListProjects", ctx).
+				Return([]*harbormodels.Project{{Name: "ms-a"}, {Name: "library"}}, nil)
 
-	if err := newMockProvider(client).Delete(context.Background(), "a"); err != nil {
-		t.Fatal(err)
-	}
-	if client.deletedProject != "ms-a" {
-		t.Fatalf("deleted project = %q, want ms-a", client.deletedProject)
-	}
-}
+			ids, err := provider.List(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ids).To(Equal([]model.ServiceID{"a"}))
+		})
+	})
+
+	Describe("Delete", func() {
+		It("should delete the project when its robot account is missing", func() {
+			client.On("GetProject", ctx, "ms-a").
+				Return(&harbormodels.Project{Name: "ms-a", ProjectID: 1}, nil)
+			client.On("ListProjectRobots", ctx, int64(1)).
+				Return([]*harbormodels.Robot{}, nil)
+			client.On("DeleteProject", ctx, "ms-a").Return(nil)
+
+			Expect(provider.Delete(ctx, "a")).To(Succeed())
+		})
+	})
+})

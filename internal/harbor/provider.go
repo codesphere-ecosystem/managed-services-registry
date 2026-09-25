@@ -22,7 +22,8 @@ import (
 const ProviderType = "harbor"
 const managedRobotName = "ms-admin"
 
-type harborClient interface {
+// Client is the subset of the Harbor API used by the provider.
+type Client interface {
 	CreateProject(ctx context.Context, name string, public bool, storageLimit int64) error
 	GetProject(ctx context.Context, name string) (*harbormodels.Project, error)
 	ListProjects(ctx context.Context) ([]*harbormodels.Project, error)
@@ -40,12 +41,12 @@ type harborClient interface {
 // Provider manages Harbor projects and project-scoped robot accounts.
 type Provider struct {
 	cfg    Config
-	client harborClient
+	client Client
 	logger *slog.Logger
 }
 
 // NewProvider creates a Harbor provider.
-func NewProvider(cfg Config, client harborClient, logger *slog.Logger) *Provider {
+func NewProvider(cfg Config, client Client, logger *slog.Logger) *Provider {
 	return &Provider{
 		cfg:    cfg,
 		client: client,

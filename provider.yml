@@ -17,7 +17,7 @@ description: |
   project storage quota in MiB.
 backend:
   api:
-    endpoint: https://2403471-3000.1.csa.codesphere-demo.com/api/v1/harbor
+    endpoint: https://<my-provider-url>/api/v1/harbor
     # secret: Bearer your-api-key
 resourceParameters:
   storage:
@@ -28,15 +28,22 @@ resourceParameters:
       x-update-constraint: increase-only
   cpu:
     pricedAs: cpu-tenths
-    schema: { type: number, readOnly: true }
+    schema:
+      type: number
+      readOnly: true
   memory:
     pricedAs: ram-mib
-    schema: { type: integer, readOnly: true }
+    schema:
+      type: integer
+      readOnly: true
 plans:
   - id: 0
     name: Default
     description: Harbor project with a configurable storage quota.
-    parameters: { storage: 10240, cpu: 0, memory: 0 }
+    parameters:
+      storage: 10240
+      cpu: 0
+      memory: 0
 configSchema:
   type: object
   properties:
