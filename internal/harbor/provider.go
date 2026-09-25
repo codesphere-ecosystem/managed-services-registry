@@ -22,15 +22,30 @@ import (
 const ProviderType = "harbor"
 const managedRobotName = "ms-admin"
 
+type harborClient interface {
+	CreateProject(ctx context.Context, name string, public bool, storageLimit int64) error
+	GetProject(ctx context.Context, name string) (*harbormodels.Project, error)
+	ListProjects(ctx context.Context) ([]*harbormodels.Project, error)
+	UpdateProject(ctx context.Context, name string, public bool, storageLimit int64) error
+	GetProjectSummary(ctx context.Context, name string) (*harbormodels.ProjectSummary, error)
+	DeleteProject(ctx context.Context, name string) error
+	CreateProjectRobot(ctx context.Context, projectName string, req *harbormodels.RobotCreate) (*harbormodels.RobotCreated, error)
+	ListProjectRobots(ctx context.Context, projectID int64) ([]*harbormodels.Robot, error)
+	GetProjectRobot(ctx context.Context, robotID int64) (*harbormodels.Robot, error)
+	UpdateProjectRobotPassword(ctx context.Context, robotID int64, password string) error
+	DeleteProjectRobot(ctx context.Context, robotID int64) error
+	UpdateProjectStorageQuota(ctx context.Context, projectID int64, storageLimit int64) error
+}
+
 // Provider manages Harbor projects and project-scoped robot accounts.
 type Provider struct {
 	cfg    Config
-	client *apiClient
+	client harborClient
 	logger *slog.Logger
 }
 
 // NewProvider creates a Harbor provider.
-func NewProvider(cfg Config, client *apiClient, logger *slog.Logger) *Provider {
+func NewProvider(cfg Config, client harborClient, logger *slog.Logger) *Provider {
 	return &Provider{
 		cfg:    cfg,
 		client: client,
