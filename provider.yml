@@ -15,7 +15,6 @@ description: |
 
   The selected plan's `parameters.storage` value is used as the Harbor
   project storage quota in MiB.
-documentationUrl: https://docs.codesphere.com/managed-services/providers/harbor
 backend:
   api:
     endpoint: https://2403471-3000.1.csa.codesphere-demo.com/api/v1/harbor
